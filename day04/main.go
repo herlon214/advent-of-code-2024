@@ -10,19 +10,19 @@ import (
 type MatchFn func(i int, j int) bool
 
 func main() {
-	data, err := os.ReadFile("day04/example_2.txt")
+	data, err := os.ReadFile("day04/input.txt")
 	if err != nil {
 		panic(err)
 	}
 
 	search := NewWordSearch(data)
-	// part1 := search.Count(
-	// 	search.Forward,
-	// 	search.Upward,
-	// 	search.DiagonallyBackward,
-	// 	search.DiagonallyForward,
-	// )
-	// fmt.Println("Part 1:", part1)
+	part1 := search.Count(
+		search.Forward,
+		search.Upward,
+		search.DiagonallyBackward,
+		search.DiagonallyForward,
+	)
+	fmt.Println("Part 1:", part1)
 	fmt.Println("Part 2:", search.Count(search.Cross))
 }
 
@@ -38,7 +38,7 @@ func NewWordSearch(input []byte) *WordSearch {
 	lines := strings.Split(data, "\n")
 
 	// Read backwards to make it easy to compare visually
-	for _, line := range lines {
+	for _, line := range slices.Backward(lines) {
 		current := make([]string, 0)
 		for _, char := range line {
 			current = append(current, string(char))
@@ -116,24 +116,18 @@ func (w *WordSearch) Cross(x int, y int) bool {
 		return false
 	}
 
-	topLeft := w.input[x-1][y-1]
-	topRight := w.input[x-1][y+1]
-	bottomLeft := w.input[x+1][y-1]
-	bottomRight := w.input[x+1][y+1]
+	topLeft := w.input[x+1][y-1]
+	topRight := w.input[x+1][y+1]
+	bottomLeft := w.input[x-1][y-1]
+	bottomRight := w.input[x-1][y+1]
 
-	result := (topLeft == "M" && bottomRight == "S" || topLeft == "S" && bottomLeft == "M") &&
-		(topRight == "M" && bottomLeft == "S" || topRight == "S" || bottomRight == "M")
-
-	if result {
-		fmt.Println(topLeft, topRight, bottomLeft, bottomRight)
-		fmt.Println("--------")
-		fmt.Println(y, x)
-		fmt.Println(topLeft, ".", topRight)
-		fmt.Println(".", "A", ".")
-		fmt.Println(bottomLeft, ".", bottomRight)
+	for _, item := range []string{topLeft, topRight, bottomLeft, bottomRight} {
+		if item != "S" && item != "M" {
+			return false
+		}
 	}
 
-	return result
+	return topLeft != bottomRight && topRight != bottomLeft
 }
 
 func (w *WordSearch) Count(matchFns ...MatchFn) int {
