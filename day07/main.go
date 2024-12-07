@@ -139,7 +139,6 @@ func (e Equation) Evaluate(operators []Operator) int64 {
 		op := ops[0]
 		result := op.Execute(left, right)
 
-		// fmt.Println(left, op, right, "=", result)
 		left = result
 
 		// Bump sequence
