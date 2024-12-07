@@ -11,8 +11,9 @@ import (
 type Operator string
 
 const (
-	Multiply Operator = "*"
-	Add      Operator = "+"
+	Multiply    Operator = "*"
+	Add         Operator = "+"
+	Concatenate Operator = "||"
 )
 
 type Equation struct {
@@ -29,13 +30,16 @@ func main() {
 		panic(err)
 	}
 
-	equations := ParseEquations(data)
-	possibleEquations := equations.FilterPossible()
+	// Part 1
+	eqPart1 := ParseEquations(data, []Operator{Add, Multiply})
+	fmt.Println("Part 1:", eqPart1.FilterPossible().TotalCalibrationResult())
 
-	fmt.Println("Part 1:", possibleEquations.TotalCalibrationResult())
+	// Part 2
+	eqPart2 := ParseEquations(data, []Operator{Add, Multiply, Concatenate})
+	fmt.Println("Part 2:", eqPart2.FilterPossible().TotalCalibrationResult())
 }
 
-func ParseEquations(input []byte) Equations {
+func ParseEquations(input []byte, availableOperators []Operator) Equations {
 	equations := make(Equations, 0)
 
 	for _, line := range strings.Split(string(input), "\n") {
@@ -58,20 +62,27 @@ func ParseEquations(input []byte) Equations {
 			numbers = append(numbers, int64(number))
 		}
 
-		// Generate all possible combinations of + and * operators
+		// Generate all possible combinations of +, * and || operators
 		numOperators := len(numbers) - 1
-		possibleOperations := make([][]Operator, 1<<numOperators)
-		for i := range possibleOperations {
-			operations := make([]Operator, numOperators)
-			for j := 0; j < numOperators; j++ {
-				if i&(1<<j) == 0 {
-					operations[j] = Add
-				} else {
-					operations[j] = Multiply
-				}
+		possibleOperations := make([][]Operator, 0)
+
+		// Helper function to generate permutations
+		var generateOperations func(current []Operator)
+		generateOperations = func(current []Operator) {
+			if len(current) == numOperators {
+				possibleOperations = append(possibleOperations, slices.Clone(current))
+				return
 			}
-			possibleOperations[i] = operations
+
+			// Try each operator
+			for _, op := range availableOperators {
+				current = append(current, op)
+				generateOperations(current)
+				current = current[:len(current)-1]
+			}
 		}
+
+		generateOperations(make([]Operator, 0))
 
 		equations = append(equations, Equation{
 			result:             int64(result),
@@ -145,6 +156,13 @@ func (o Operator) Execute(a int64, b int64) int64 {
 		return a * b
 	case Add:
 		return a + b
+	case Concatenate:
+		val, err := strconv.Atoi(fmt.Sprintf("%d%d", a, b))
+		if err != nil {
+			panic(err)
+		}
+
+		return int64(val)
 	default:
 		panic("unknown operator")
 	}
